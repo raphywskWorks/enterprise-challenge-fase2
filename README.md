@@ -52,87 +52,68 @@ Esses dados serão processados por modelos de Machine Learning que irão prever 
 
 | Camada             | Tecnologia                          | Justificativa |
 |--------------------|-------------------------------------|---------------|
-| **Sensoriamento**  | ESP32                               | Coleta local de tempo, ciclos, temperatura e vibração |
-| **Armazenamento**  | AWS RDS (MySQL) ou DynamoDB         | Armazenamento confiável e escalável |
-| **Backend**        | Python                              | Processamento dos dados e integração com IA |
-| **Machine Learning**| Scikit-learn / TensorFlow          | Modelagem e predição de falhas |
-| **Análise de Dados**| Pandas / NumPy                     | Manipulação e análise de dados históricos |
-| **Visualização**   | Matplotlib / Seaborn                | Geração de gráficos e dashboards |
-| **Nuvem**          | AWS EC2                             | Processamento remoto e simulação de ambiente industrial |
+| **Sensoriamento**  | ESP32                               | Coleta local de tempo, ciclos, temperatura e umidade |
+| **Sensoriamento**  | DTH22                               | Coleta de dados sobre temeperatura e humidade |
+| **Simulação**      | [Wokwi](https://wokwi.com/)         | Plataforma para simulação de sensores e circuitos |
+| **Visualização**   | Python/Pandas/MatlibPlot            | Geração do gráfico com base no conteúdo gerado na simulação no arquivo CSV |
+
+Nesta etapa, implementamos um circuito utilizando um sendor de temperatura DTH22 conectado a um ESP32 para colhermos dados de temperatura e humidade a cada 2 segundos. Com isso acreditamos que conseguiremos insights valiosos sobre como as condições de trabalho e climáticas afetam a durabilidade das peças.
+
+![Circuito esp32-DTH22](https://github.com/user-attachments/assets/167a5efb-539b-4c0f-b534-3445e3a7141a)
+
+
+### 🧠 Por que escolhemos o ESP32?
+
+O ESP32 foi escolhido como microcontrolador principal por ser uma plataforma robusta, acessível e amplamente utilizada em projetos de Internet das Coisas (IoT). Ele apresenta diversas vantagens:
+
+- Possui **Wi-Fi e Bluetooth integrados**, o que facilita futuras extensões para envio de dados à nuvem.
+- Suporta **múltiplos sensores e dispositivos simultaneamente** devido ao grande número de GPIOs.
+- É compatível com as principais plataformas de simulação (como o Wokwi), permitindo o desenvolvimento mesmo sem hardware físico.
+- Tem **baixo consumo de energia**, sendo ideal para aplicações embarcadas em ambientes industriais.
+- Apresenta excelente **suporte da comunidade** e documentação, o que acelera o desenvolvimento e a prototipagem.
+
+Essas características fazem do ESP32 uma excelente escolha para projetos que envolvem **monitoramento de ambientes industriais digitalizados**, como proposto no desafio da Hermes Reply.
+
+### 🌡️ Por que escolhemos o sensor DHT22?
+
+O sensor DHT22 foi selecionado por ser um dos sensores mais comuns e confiáveis para medir **temperatura e umidade**, duas variáveis fundamentais para o monitoramento de ambientes industriais. Ele apresenta as seguintes vantagens:
+
+- Mede **temperatura de -40 a 80 °C** e **umidade de 0 a 100%**, cobrindo a maior parte dos cenários industriais.
+- Apresenta maior **precisão e estabilidade** em comparação com o modelo DHT11.
+- É fácil de integrar com microcontroladores como o ESP32, utilizando apenas **um pino digital**.
+- É **suportado nativamente na plataforma Wokwi**, o que possibilita testes, simulações e coleta de dados mesmo sem o sensor físico.
+
+A escolha do DHT22 atende ao objetivo desta fase do projeto: **coletar dados reais (ou simulados) representando sensores físicos em operação no chão de fábrica**.
 
 ---
 
-## 🔌 Pipeline de Dados
+### 🖥️ Leituras no Monitor Serial
 
-1. **Coleta de Dados (ESP32)**  
-   - Tempo de uso
-   - Temperatura
-   - Ciclos de operação
-   - Vibração (opcional)
+Abaixo, a simulação no Wokwi mostra as leituras de temperatura e umidade capturadas pelo ESP32 com o sensor DHT22:
 
-2. **Envio dos Dados (simulado via script Python)**  
-   - Comunicação com o banco de dados
+![serial_monitor](https://github.com/user-attachments/assets/ef790a3c-2c5b-4773-83b1-63a07bbf1ec1)
 
-3. **Armazenamento (AWS RDS / DynamoDB)**  
-   - Histórico estruturado e seguro
 
-4. **Processamento (EC2)**  
-   - Modelos de ML treinados para predição de falhas. A predileção por EC2 ao invés de ambiente local é devido a custos e facilidade de manutenção da infra-estrutura.
+Os dados brutos em CSV podem ser encontrados no caminho src/data/dados_sensor.csv
 
-5. **Visualização e Alertas**  
-   - Dashboards e alertas automatizados com base nas previsões
+### 📊 Gráfico
+Para gerar um gráfico dos dados coletados pelo ESP32/DTH22:
 
----
+Navegue até o diretório src/charts`
+``` cd charts ```
 
-## 🧱 Modelagem de Banco de Dados
+Instale a biblioteca matplotli
+``` pip install matplotlib ```
 
-### Principais Entidades:
+Rode o script
+```python charts.py ```
 
-- **PECAS**: id_peca, tipo, fabricante, tempo_uso_total
-- **SENSORES**: id_sensor, tipo_sensor, id_peca
-- **CICLOS_OPERACAO**: id_ciclo, id_peca, data_inicio, data_fim, duracao
-- **LEITURAS_SENSOR**: id_leitura, id_sensor, leitura_valor, leitura_data_hora
-- **FALHAS**: id_falha, id_peca, descricao, data
-- **ALERTAS**: id_alerta, id_falha, nivel_risco
-
-### Relacionamentos:
-
-- Uma peça possui vários sensores (1:N)
-- Uma peça possui vários ciclos de operação (1:N)
-- Cada ciclo possui várias leituras (1:N)
-- Uma peça pode ter várias falhas (1:N)
-- Cada falha pode gerar múltiplos alertas (1:N)
+![image](https://github.com/user-attachments/assets/28053cdd-539c-42a2-9285-f76055014c9d)
 
 ---
-
-## 🖼️ Arquitetura da Solução
-
-A imagem abaixo representa a arquitetura proposta do sistema, integrando sensores, banco de dados e modelos de IA:
-
-<img src="./assets/enterprise-challenge.JPG">
-
----
-
-## 📊 Estratégia de Coleta de Dados
-
-Nesta fase inicial, os dados serão **simulados** por meio de scripts Python que imitam a operação dos sensores conectados a um ESP32. Serão gerados:
-
-- Ciclos de operação aleatórios
-- Leituras de temperatura variando com o tempo
-- Eventos de falha simulados para treinar o modelo
-
-Em fases futuras, será possível realizar a **integração real com sensores físicos ESP32**, via conexão Wi-Fi e envio dos dados diretamente para o banco na nuvem.
-
----
-
-## 📆 Plano de Desenvolvimento
-
-1. Simulação dos dados de sensores
-2. Modelagem relacional do banco de dados
-3. Criação do pipeline de ingestão e armazenamento
-4. Desenvolvimento do modelo de IA
-5. Criação de dashboards com alertas preditivos
-6. Integração final e testes
+### 🖥️ Código do projeto
+Todo o código utilizado na plataforma wokwi para extrair os dados dos sensores podem ser encontrados em src/core.
+O código para gerar o gráfico está disponível em src/charts/charts.py
 
 ---
 
@@ -148,32 +129,17 @@ Em fases futuras, será possível realizar a **integração real com sensores f�
 
 ---
 
-## ✅ Status da Entrega
-
-- ✅ Definição da arquitetura da solução
-- ✅ Modelagem inicial do banco de dados
-- ✅ Escolha das tecnologias e justificação
-- ✅ README documentado
-- ⬜ Implementação do MVP (futuro)
-
----
-
 ## 📎 Observações
 
-- O repositório é privado e foi compartilhado com os tutores responsáveis.
+- O repositório é público e foi compartilhado com os tutores responsáveis.
 - Dados utilizados nesta fase são simulados.
-- Nenhum código funcional foi exigido nesta etapa, apenas a proposta da arquitetura.
 
 ---
-
-## 🔐 Tutores com acesso
-
-- leoruiz197
 
 ---
 
 ## 🗃 Histórico de lançamentos
-* 0.1.0 - 14/05/2025
+* 0.1.0 - 13/06/2025
     *
 
 ## 📋 Licença
